@@ -11,3 +11,7 @@ sudo docker run -v=$PWD:/data/ bertinterlinear:latest /bin/bash -c "python3 /dat
 ```
 
 
+https://github.com/renatoviolin/next_word_prediction/blob/master/app.py
+https://github.com/gdario/learning_transformers/blob/master/src/bert_example.py
+
+
