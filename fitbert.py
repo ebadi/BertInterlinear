@@ -40,6 +40,8 @@ else:
 
 bert.eval()
 
+
+
 def softmax(x):
     return x.exp() / (x.exp().sum(-1)).unsqueeze(-1)
 
@@ -49,10 +51,10 @@ def rank_single(masked_sent: str, words: List[str]):
 
     tokenized_text = tokenizer.tokenize(masked_sent)
     # Mask a token that we will try to predict back with `BertForMaskedLM`
-    masked_index = 7
+    masked_index = 3
     tokenized_text[masked_index] = '[MASK]'
     
-    masked_index_extra = 9
+    masked_index_extra = 7
     tokenized_text[masked_index_extra] = '[MASK]'
     
     print("MSG2 :: ", masked_sent)
@@ -107,8 +109,8 @@ def rank_single(masked_sent: str, words: List[str]):
         return ranked_options, ranked_options_prob
 
 
-sent = "Why Bert, you're looking test today!"
-options = ['buff', 'handsome', 'strong']
+sent = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+options = ['fox', 'quick', 'lazy']
 
 ranked, prob = rank_single(sent, options)
 
@@ -117,6 +119,4 @@ ranked = (
         .map(lambda x: seq(x).make_string(" ").strip())
         .list()
     )
-    
 
-print(ranked, prob)
