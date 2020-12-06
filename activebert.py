@@ -45,7 +45,7 @@ bert.eval()
 mask_token="[MASK]"
 mask_token_id=tokenizer.convert_tokens_to_ids("[MASK]")
 
-sentence = "As the use of typewriters grew in the late 19th century, the phrase began appearing in typing lesson books as a practice sentence. Early examples include How to Become Expert in Typewriting: A Complete Instructor Designed Especially for the Remington Typewriter (1890),[5] and Typewriting Instructor and Stenographer's Hand-book (1892). By the turn of the 20th century, the phrase had become widely known. In the January 10, 1903, issue of Pitman's Phonetic Journal, it is referred to as the well known memorized typing line embracing all the letters of the alphabet Robert Baden-Powell's book Scouting for Boys (1908) uses the phrase as a practice sentence for signaling . "
+sentence = "As the use of typewriters grew in the late 19th century, the phrase began appearing in typing lesson books as a practice sentence. Early examples include How to Become Expert in Typewriting: A Complete Instructor Designed Especially for the Remington Typewriter (1890),[5] and Typewriting Instructor and Stenographer's Hand-book (1892). By the turn of the 20th century, the phrase had become widely known. In the January 10, 1903, issue of Pitman's Phonetic Journal, it is referred to as  the well known memorized typing line embracing all the letters of the alphabet Robert Baden-Powell's book Scouting for Boys (1908) uses the phrase as a practice sentence for signaling"
 print("String::")
 print(sentence)
 tokenized_sentence = sentence.split()
@@ -54,7 +54,7 @@ bertlist = []
 bertlist_ids = []
 masked_sentecelist = []
 
-print("\n\n======== sentecelist::")
+print("\n\n======== Sentecelist::")
 for i in range(len(tokenized_sentence)):
     compound_word = tokenized_sentence[i]
     toklist = tokenizer.tokenize(compound_word)
@@ -77,7 +77,7 @@ for i in range(len(sentecelist)):
     else:
         masked_sentecelist.append((indx, "[MASK]", ([mask_token], [mask_token_id] ) , trans_options))
 
-print("\n\n======== masked_sentecelist::")
+print("\n\n======== Masked_sentecelist::")
 for i in range(len(masked_sentecelist)):
     (indx, word, tokz , trans_options) = masked_sentecelist[i]
     (toklist, toklist_id) = tokz
@@ -96,6 +96,9 @@ preds = bert(tens)[0]
 probs = softmax(preds)
 bertIndx = 0
 
+
+sorted_sentecelist = []
+
 for i in range(len(masked_sentecelist)):
     (indx, word, tokz , trans_options) = masked_sentecelist[i]
     (toklist,toklist_id) = tokz
@@ -105,7 +108,7 @@ for i in range(len(masked_sentecelist)):
         .map(lambda x: tokenizer.convert_tokens_to_ids(x)[0])
     )
 
-    print("masked_sentecelist index",i,tokz, " Bert index", bertIndx, bertlist[indx], mask_token_id  )
+    #print("Masked_sentecelist index",i,tokz, " Bert index", bertIndx, bertlist[indx] )
     if bertlist_ids[bertIndx] == mask_token_id :
         ranked_pairs = (
             seq(trans_options_ids)
@@ -113,7 +116,18 @@ for i in range(len(masked_sentecelist)):
             .zip(trans_options)
             .sorted(key=lambda x: x[0], reverse=True)
         )
-        print(i, "ranked_pairs: " , ranked_pairs)
+        #print(i, "ranked_pairs: " , ranked_pairs)
+        print("[" + ranked_pairs[0][1] + "]",  end=" ")
         ranked_options = (seq(ranked_pairs).map(lambda x: x[1])).list()
-        print(i, "ranked_options: " , ranked_options)
+        #print(i, "ranked_options: " , ranked_options)
+    else:
+        print(word, end=" ")
+        
     bertIndx = bertIndx + len(toklist_id)
+
+
+
+
+
+ 
+
