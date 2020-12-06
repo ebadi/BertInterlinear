@@ -16,7 +16,7 @@ def softmax(x):
 model=None
 tokenizer=None
 model_name="bert-large-uncased"
-mask_token="[MASK]"
+
 disable_gpu=False
 device = torch.device("cpu")
 print("device:", device)
@@ -42,44 +42,64 @@ else:
 
 bert.eval()
 
-sentence = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
+mask_token="[MASK]"
+mask_token_id=tokenizer.convert_tokens_to_ids("[MASK]")
+
+sentence = "The quickest brown fox jumping over the lazies dog. The quick brown fox jumps over the lazy dog . "
 print("String::")
 print(sentence)
 strlist = sentence.split()
 arr = []
+bertlist = []
+bertlist_ids = []
+
 for i in range(len(strlist)):
     compound_word = strlist[i]
     toklist = tokenizer.tokenize(compound_word)
     toklist_id = tokenizer.convert_tokens_to_ids(toklist)
-    if i % 6 == 0 :
-    	arr.append((i, compound_word, (toklist, toklist_id), ["brown", strlist[i], "dog", "lazy"]))
-    elif i % 7 == 0 :
-        arr.append((i, compound_word, (toklist, toklist_id), [strlist[i], "lazy", "jump"]))
+    
+    if i % 5 == 1 :
+    	trans_options =  ["brown", strlist[i], "dog", "lazy"]
     else:
-    	arr.append((i, compound_word, (toklist, toklist_id), [strlist[i]]))
-    	
+    	trans_options = [strlist[i]]	
+    arr.append((i, compound_word, (toklist, toklist_id), trans_options ))
+    
+    if len(trans_options) == 1:
+        bertlist.extend(toklist)
+        bertlist_ids.extend(toklist_id)
+    else:
+        bertlist.append(mask_token)
+        bertlist_ids.append(mask_token_id)
+
 
 print("\n\n========Array::")
-print(arr)
+for i in range(len(arr)):
+    print(arr[i])
 
-bertlist = []
+
 for i in range(len(arr)):
     (indx, word, tokz , trans_options) = arr[i]
     (toklist,toklist_id) = tokz
     if len(trans_options) == 1:
         bertlist.extend(toklist)
+        bertlist_ids.extend(toklist_id)
     else:
         bertlist.append(mask_token)
+        bertlist_ids.append(mask_token_id)
 
 print("\n\n========Bertlist::")
-print(bertlist)
-tens = torch.tensor(toklist_id).unsqueeze(0)
+print(len(bertlist), bertlist)
+
+print(len(bertlist_ids), bertlist_ids)
+
+tens = torch.tensor(bertlist_ids).unsqueeze(0)
 tens = tens.to(device)
 torch.no_grad()
 preds = bert(tens)[0]
 probs = softmax(preds)
-print(type(probs), probs.dtype)
-for i in range(len(arr)):
+
+
+for i in range(len(bertlist_ids)):
     (indx, word, tokz , trans_options) = arr[i]
     (toklist,toklist_id) = tokz
     trans_options_ids = (
@@ -87,14 +107,15 @@ for i in range(len(arr)):
         .map(lambda x: tokenizer.tokenize(x))
         .map(lambda x: tokenizer.convert_tokens_to_ids(x)[0])
     )
-    if bertlist[i] == mask_token :
-        print("Mask index",  i)
+    if bertlist_ids[i] == mask_token_id :
+        print("\nMask index",  i)
         ranked_pairs = (
             seq(trans_options_ids)
             .map(lambda x: float(probs[0][i][x].item()))
             .zip(trans_options)
             .sorted(key=lambda x: x[0], reverse=True)
         )
-        #ranked_options = (seq(ranked_pairs).map(lambda x: x[1])).list()
-        print(ranked_pairs)
-        #print(ranked_options)
+        print(i, "ranked_pairs: " , ranked_pairs)
+        ranked_options = (seq(ranked_pairs).map(lambda x: x[1])).list()
+        print(i, "ranked_options: " , ranked_options)
+
