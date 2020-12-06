@@ -45,70 +45,68 @@ bert.eval()
 mask_token="[MASK]"
 mask_token_id=tokenizer.convert_tokens_to_ids("[MASK]")
 
-sentence = "The quickest brown fox jumping over the lazies dog. The quick brown fox jumps over the lazy dog . "
+sentence = "As the use of typewriters grew in the late 19th century, the phrase began appearing in typing lesson books as a practice sentence. Early examples include How to Become Expert in Typewriting: A Complete Instructor Designed Especially for the Remington Typewriter (1890),[5] and Typewriting Instructor and Stenographer's Hand-book (1892). By the turn of the 20th century, the phrase had become widely known. In the January 10, 1903, issue of Pitman's Phonetic Journal, it is referred to as the well known memorized typing line embracing all the letters of the alphabet Robert Baden-Powell's book Scouting for Boys (1908) uses the phrase as a practice sentence for signaling . "
 print("String::")
 print(sentence)
-strlist = sentence.split()
-arr = []
+tokenized_sentence = sentence.split()
+sentecelist = []
 bertlist = []
 bertlist_ids = []
+masked_sentecelist = []
 
-for i in range(len(strlist)):
-    compound_word = strlist[i]
+print("\n\n======== sentecelist::")
+for i in range(len(tokenized_sentence)):
+    compound_word = tokenized_sentence[i]
     toklist = tokenizer.tokenize(compound_word)
     toklist_id = tokenizer.convert_tokens_to_ids(toklist)
     
     if i % 5 == 1 :
-    	trans_options =  ["brown", strlist[i], "dog", "lazy"]
+    	trans_options =  ["brown", tokenized_sentence[i], "dog", "lazy"]
     else:
-    	trans_options = [strlist[i]]	
-    arr.append((i, compound_word, (toklist, toklist_id), trans_options ))
-    
+    	trans_options = [tokenized_sentence[i]]
+
+    sentecelist.append((i, compound_word, (toklist, toklist_id), trans_options ))
+    print(sentecelist[i])
+
+
+
+for i in range(len(sentecelist)):
+    (indx, word, tokz , trans_options) = sentecelist[i]
     if len(trans_options) == 1:
-        bertlist.extend(toklist)
-        bertlist_ids.extend(toklist_id)
+        masked_sentecelist.append((indx, word, tokz , trans_options))
     else:
-        bertlist.append(mask_token)
-        bertlist_ids.append(mask_token_id)
+        masked_sentecelist.append((indx, "[MASK]", ([mask_token], [mask_token_id] ) , trans_options))
+
+print("\n\n======== masked_sentecelist::")
+for i in range(len(masked_sentecelist)):
+    (indx, word, tokz , trans_options) = masked_sentecelist[i]
+    (toklist, toklist_id) = tokz
+    bertlist.extend(toklist)
+    bertlist_ids.extend(toklist_id)
+    print(masked_sentecelist[i])
 
 
-print("\n\n========Array::")
-for i in range(len(arr)):
-    print(arr[i])
-
-
-for i in range(len(arr)):
-    (indx, word, tokz , trans_options) = arr[i]
-    (toklist,toklist_id) = tokz
-    if len(trans_options) == 1:
-        bertlist.extend(toklist)
-        bertlist_ids.extend(toklist_id)
-    else:
-        bertlist.append(mask_token)
-        bertlist_ids.append(mask_token_id)
-
-print("\n\n========Bertlist::")
+print("\n\n============= BERT")    
 print(len(bertlist), bertlist)
-
 print(len(bertlist_ids), bertlist_ids)
-
 tens = torch.tensor(bertlist_ids).unsqueeze(0)
 tens = tens.to(device)
 torch.no_grad()
 preds = bert(tens)[0]
 probs = softmax(preds)
+bertIndx = 0
 
-
-for i in range(len(bertlist_ids)):
-    (indx, word, tokz , trans_options) = arr[i]
+for i in range(len(masked_sentecelist)):
+    (indx, word, tokz , trans_options) = masked_sentecelist[i]
     (toklist,toklist_id) = tokz
     trans_options_ids = (
         seq(trans_options)
         .map(lambda x: tokenizer.tokenize(x))
         .map(lambda x: tokenizer.convert_tokens_to_ids(x)[0])
     )
-    if bertlist_ids[i] == mask_token_id :
-        print("\nMask index",  i)
+
+    print("masked_sentecelist index",i,tokz, " Bert index", bertIndx, bertlist[indx], mask_token_id  )
+    if bertlist_ids[bertIndx] == mask_token_id :
         ranked_pairs = (
             seq(trans_options_ids)
             .map(lambda x: float(probs[0][i][x].item()))
@@ -118,4 +116,4 @@ for i in range(len(bertlist_ids)):
         print(i, "ranked_pairs: " , ranked_pairs)
         ranked_options = (seq(ranked_pairs).map(lambda x: x[1])).list()
         print(i, "ranked_options: " , ranked_options)
-
+    bertIndx = bertIndx + len(toklist_id)
