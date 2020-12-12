@@ -10,6 +10,9 @@ from transformers import (
     DistilBertTokenizer,
 )
 
+import time
+
+
 
 def softmax(x):
     return x.exp() / (x.exp().sum(-1)).unsqueeze(-1)
@@ -47,7 +50,7 @@ bert.eval()
 mask_token = "[MASK]"
 mask_token_id = tokenizer.convert_tokens_to_ids("[MASK]")
 
-sentence = "As the use of typewriters grew in the late 19th century, the phrase began appearing in typing lesson books as a practice sentence. Early examples include How to Become Expert in Typewriting: A Complete Instructor Designed Especially for the Remington Typewriter (1890),[5] and Typewriting Instructor and Stenographer's Hand-book (1892). By the turn of the 20th century, the phrase had become widely known. In the January 10, 1903, issue of Pitman's Phonetic Journal, it is referred to as  the well known memorized typing line embracing all the letters of the alphabet Robert Baden-Powell's book Scouting for Boys (1908) uses the phrase as a practice sentence for signaling"
+sentence = "As the use of typewriters grew in the late 19th century, the phrase began appearing in typing lesson books as a practice sentence. Early examples include How to Become Expert in Typewriting: A Complete Instructor Designed Especially for the Remington Typewriter (1890),[5] and Typewriting Instructor and Stenographer's Hand-book (1892). By the turn of the 20th century, the phrase had become widely known. In the January 10, 1903, issue of Pitman's Phonetic Journal, it is referred to as  the well known memorized typing line embracing all the letters of the alphabet Robert Baden-Powell's book Scouting for Boys (1908) uses the phrase as a practice sentence for signaling. "
 print("String::")
 print(sentence)
 tokenized_sentence = sentence.split()
@@ -93,12 +96,19 @@ for i in range(len(masked_sentencelist)):
 print("\n\n============= BERT")
 print(len(bertlist), bertlist)
 print(len(bertlist_ids), bertlist_ids)
+
+t = time.process_time()
+
 tens = torch.tensor(bertlist_ids).unsqueeze(0)
 tens = tens.to(device)
 torch.no_grad()
 preds = bert(tens)[0]
 probs = softmax(preds)
 sorted_sentecelist = []
+
+elapsed_time = time.process_time() - t
+
+
 for j in [7,6,5,4,3,2,1]:
   if len(sorted_sentecelist) != 0:
       masked_sentencelist = sorted_sentecelist
@@ -139,3 +149,5 @@ for j in [7,6,5,4,3,2,1]:
 print("\n\n======== sorted_sentecelist::")
 for i in range(len(sorted_sentecelist)):
     print(sorted_sentecelist[i])
+    
+print("\n\n ##################### ", elapsed_time)
